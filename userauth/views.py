@@ -2,7 +2,8 @@ from django.shortcuts import render, redirect
 from django.http import HttpResponse
 from django.contrib.auth.models import User
 from django.contrib.auth import authenticate, login, logout
-from .models import Profile
+from .models import Profile, Post
+from django.contrib.auth.decorators import login_required
 # Create your views here.
 
 def signup(request):
@@ -22,13 +23,56 @@ def signup(request):
                 return redirect('/')
             return redirect('/loginn')
 
-        # Jeśli metoda to GET, renderuj formularz rejestracji
+        #jesli get
         return render(request, 'signup.html')
 
+
+    #trobuleshooting
     except Exception as e:
         invalid = "User already exists"
-        print("Błąd:", e)  # Dodaj logowanie błędów, aby lepiej diagnozować problemy
+        print("Błąd:", e)  
         return render(request, 'signup.html', {'invalid': invalid})
 
+
+def loginn(request):
+    if request.method == 'POST':
+        fnm = request.POST.get('fnm')
+        pwd = request.POST.get('pwd')
+        userr = authenticate(request, username=fnm, password=pwd)
+        if userr is not None:
+            login(request,userr)
+            return redirect('/')
+        invalid="Invalid credentials"
+        return render(request,'loginn.html', {'invalid': invalid})
+    return render(request, 'loginn.html')
+    
+@login_required(login_url='/login')
+def logoutt(request):
+    logout(request)
+    return redirect('/login')
+
+@login_required(login_url='/login')
+def upload(request):
+    if request.method == 'POST':
+        user = request.user.username
+        image = request.FILES.get('image-upload')
+        caption = request.POST['caption']
+        new_post = Post.objects.create(user=user, image=image, caption=caption)
+        new_post.save()
+        return redirect('/')
+    else:
+        return redirect('/')
+
+
+
+
+
+
 def home(request):
-    return HttpResponse("Hello")
+    post = Post.objects.all().order_by('-created_at')
+  
+    context={
+        'post': post,
+        
+    }
+    return render(request,'main.html', context)
