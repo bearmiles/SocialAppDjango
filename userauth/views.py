@@ -1,9 +1,10 @@
-from django.shortcuts import render, redirect
+from django.shortcuts import render, redirect, get_object_or_404
 from django.http import HttpResponse
 from django.contrib.auth.models import User
 from django.contrib.auth import authenticate, login, logout
-from .models import Profile, Post
+from .models import LikePost, Profile, Post
 from django.contrib.auth.decorators import login_required
+from django.views.decorators.csrf import csrf_exempt
 # Create your views here.
 
 def signup(request):
@@ -63,14 +64,39 @@ def upload(request):
     else:
         return redirect('/')
 
+@csrf_exempt
+def likes(request, id):
+    if request.method == 'POST':
+        username = request.user.username
+        post = get_object_or_404(Post, id=id)
+        like_filter = LikePost.objects.filter(post_id=id, username=username).first()
+        if like_filter is None:
+            new_like = LikePost.objects.create(post_id=id, username=username)
+            post.numberOfLikes += 1
+            post.save()
+        else:
+            like_filter.delete()
+            post.numberOfLikes -= 1
+            post.save()
+
+    return redirect('/')
+
+@login_required(login_url='/login')
+def home_posts(request, id):
+    post = Post.objects.get(id=id)
+    profile = Profile.objects.get(user=request.user)
+    context={
+        'post': post,
+        'profile' : profile
+    }
+
+    return render(request, 'main.html', context)
 
 
-
-
-
+@login_required(login_url='/login')
 def home(request):
     post = Post.objects.all().order_by('-created_at')
-  
+    # profile = Profile.objects.get(user = request.user)
     context={
         'post': post,
         
