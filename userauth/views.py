@@ -102,3 +102,18 @@ def home(request):
         
     }
     return render(request,'main.html', context)
+
+@login_required(login_url='/login')
+def profileView(request, id_user):
+    profile = Profile.objects.get(user = request.user)
+    user_profile = Profile.objects.get(user=profile)
+    print(profile)
+    username = request.user.username
+    posts = Post.objects.filter(user = id_user).order_by("-created_at")
+    context = {
+        'profile' : profile,
+        'username' : username,
+        'posts' : posts,
+        'user_profile' : user_profile
+    }
+    return render(request, 'profileView.html', context)

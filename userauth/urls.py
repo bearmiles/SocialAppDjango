@@ -14,4 +14,5 @@ urlpatterns = [
     path('upload', views.upload),
     path('like-post/<str:id>', views.likes, name='like-post'),
     path('#<str:id>', views.home_posts),
+    path('profile/<str:id_user>', views.profileView )
 ]
